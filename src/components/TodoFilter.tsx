@@ -11,53 +11,48 @@ import {
   Paper,
   Stack,
   SelectChangeEvent,
+  Grid,
+  Switch,
 } from '@mui/material';
 import { useTodo } from '../context/TodoContext';
-import { Priority, Category, TaskStatus, Todo } from '../types/todo';
+import { Priority, Category, TodoStatus, Todo } from '../types/todo';
 
 export default function TodoFilter() {
   const { state, dispatch } = useTodo();
-  const { filters, sort } = state;
+  const { filter, sort } = state;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({
-      type: 'SET_FILTERS',
+      type: 'SET_FILTER',
       payload: { search: e.target.value },
     });
   };
 
   const handlePriorityChange = (e: SelectChangeEvent<Priority | 'all'>) => {
     dispatch({
-      type: 'SET_FILTERS',
+      type: 'SET_FILTER',
       payload: { priority: e.target.value as Priority | 'all' },
     });
   };
 
   const handleCategoryChange = (e: SelectChangeEvent<Category | 'all'>) => {
     dispatch({
-      type: 'SET_FILTERS',
+      type: 'SET_FILTER',
       payload: { category: e.target.value as Category | 'all' },
     });
   };
 
-  const handleStatusChange = (e: SelectChangeEvent<TaskStatus | 'all'>) => {
+  const handleStatusChange = (e: SelectChangeEvent<TodoStatus | 'all'>) => {
     dispatch({
-      type: 'SET_FILTERS',
-      payload: { status: e.target.value as TaskStatus | 'all' },
+      type: 'SET_FILTER',
+      payload: { status: e.target.value as TodoStatus | 'all' },
     });
   };
 
-  const handleDueDateChange = (e: SelectChangeEvent<string | null>) => {
+  const handleShowArchivedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({
-      type: 'SET_FILTERS',
-      payload: { dueDate: e.target.value },
-    });
-  };
-
-  const handleShowCompletedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch({
-      type: 'SET_FILTERS',
-      payload: { showCompleted: e.target.checked },
+      type: 'SET_FILTER',
+      payload: { showArchived: e.target.checked },
     });
   };
 
@@ -73,21 +68,22 @@ export default function TodoFilter() {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-      <Stack spacing={2}>
-        <TextField
-          fullWidth
-          label="Search"
-          value={filters.search}
-          onChange={handleSearchChange}
-          size="small"
-        />
-
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+    <Paper sx={{ p: 2, mb: 2 }}>
+      <Grid container spacing={2} alignItems="center">
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            fullWidth
+            label="Search"
+            value={filter.search}
+            onChange={handleSearchChange}
+            size="small"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth size="small">
             <InputLabel>Priority</InputLabel>
             <Select
-              value={filters.priority}
+              value={filter.priority}
               label="Priority"
               onChange={handlePriorityChange}
             >
@@ -97,11 +93,12 @@ export default function TodoFilter() {
               <MenuItem value="high">High</MenuItem>
             </Select>
           </FormControl>
-
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth size="small">
             <InputLabel>Category</InputLabel>
             <Select
-              value={filters.category}
+              value={filter.category}
               label="Category"
               onChange={handleCategoryChange}
             >
@@ -113,37 +110,24 @@ export default function TodoFilter() {
               <MenuItem value="other">Other</MenuItem>
             </Select>
           </FormControl>
-
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth size="small">
             <InputLabel>Status</InputLabel>
             <Select
-              value={filters.status}
+              value={filter.status}
               label="Status"
               onChange={handleStatusChange}
             >
               <MenuItem value="all">All</MenuItem>
               <MenuItem value="todo">To Do</MenuItem>
-              <MenuItem value="in-progress">In Progress</MenuItem>
+              <MenuItem value="in_progress">In Progress</MenuItem>
               <MenuItem value="done">Done</MenuItem>
             </Select>
           </FormControl>
-
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Due Date</InputLabel>
-            <Select
-              value={filters.dueDate}
-              label="Due Date"
-              onChange={handleDueDateChange}
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="today">Today</MenuItem>
-              <MenuItem value="tomorrow">Tomorrow</MenuItem>
-              <MenuItem value="this-week">This Week</MenuItem>
-              <MenuItem value="next-week">Next Week</MenuItem>
-            </Select>
-          </FormControl>
-
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth size="small">
             <InputLabel>Sort By</InputLabel>
             <Select
               value={`${sort.field}-${sort.direction}`}
@@ -152,24 +136,25 @@ export default function TodoFilter() {
             >
               <MenuItem value="createdAt-desc">Newest First</MenuItem>
               <MenuItem value="createdAt-asc">Oldest First</MenuItem>
-              <MenuItem value="dueDate-asc">Due Date (Asc)</MenuItem>
-              <MenuItem value="dueDate-desc">Due Date (Desc)</MenuItem>
               <MenuItem value="priority-desc">Priority (High to Low)</MenuItem>
               <MenuItem value="priority-asc">Priority (Low to High)</MenuItem>
+              <MenuItem value="dueDate-asc">Due Date (Earliest First)</MenuItem>
+              <MenuItem value="dueDate-desc">Due Date (Latest First)</MenuItem>
             </Select>
           </FormControl>
-        </Box>
-
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={filters.showCompleted}
-              onChange={handleShowCompletedChange}
-            />
-          }
-          label="Show Completed"
-        />
-      </Stack>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={filter.showArchived}
+                onChange={handleShowArchivedChange}
+              />
+            }
+            label="Show Archived"
+          />
+        </Grid>
+      </Grid>
     </Paper>
   );
 } 

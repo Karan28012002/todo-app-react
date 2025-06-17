@@ -1,23 +1,21 @@
 export type Priority = 'low' | 'medium' | 'high';
 export type Category = 'work' | 'personal' | 'shopping' | 'health' | 'other';
 export type SortOption = 'createdAt' | 'text' | 'priority' | 'category' | 'dueDate';
-export type TaskStatus = 'todo' | 'in-progress' | 'done';
-export type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type TodoStatus = 'todo' | 'in-progress' | 'done';
+export type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'none';
 
 export interface SubTask {
   id: string;
   text: string;
   completed: boolean;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface Comment {
   id: string;
   text: string;
-  userId: string;
+  author: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface Attachment {
@@ -27,17 +25,27 @@ export interface Attachment {
   type: string;
   size: number;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface TimeEntry {
   id: string;
-  startTime: string;
-  endTime: string;
-  duration: number;
+  duration: number; // in minutes
   description: string;
   createdAt: string;
-  updatedAt: string;
+}
+
+export interface CustomField {
+  id: string;
+  name: string;
+  value: string;
+  type: 'text' | 'number' | 'date' | 'boolean';
+}
+
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  reminder: boolean;
+  reminderTime: string | null;
 }
 
 export interface Todo {
@@ -46,35 +54,30 @@ export interface Todo {
   completed: boolean;
   priority: Priority;
   category: Category;
-  dueDate: string | null;
   tags: string[];
-  isStarred: boolean;
-  isArchived: boolean;
+  dueDate: string | null;
   createdAt: string;
   updatedAt: string;
+  lastActivityAt: string;
+  isStarred: boolean;
+  isArchived: boolean;
+  status: TodoStatus;
+  progress: number;
   subTasks: SubTask[];
-  parentTaskId?: string;
-  dependencies: string[];
-  assignedTo: string;
+  dependencies: string[]; // IDs of dependent todos
   comments: Comment[];
   attachments: Attachment[];
   timeEntries: TimeEntry[];
-  estimatedTime: number | undefined;
-  actualTime: number | undefined;
+  estimatedTime: number | null; // in minutes
+  actualTime: number | null; // in minutes
   recurrence: {
     type: RecurrenceType;
     interval: number;
     endDate: string | null;
-  } | undefined;
-  customFields: Record<string, any>;
-  progress: number;
-  lastActivityAt: string;
-  status: TaskStatus;
-  notificationSettings: {
-    email: boolean;
-    push: boolean;
-    reminderTime: string | null;
   };
+  customFields: CustomField[];
+  assignedTo: string | null;
+  notificationSettings: NotificationSettings;
 }
 
 export interface TodoState {

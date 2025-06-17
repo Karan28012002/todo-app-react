@@ -1,81 +1,64 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { Todo, Priority, Category, TaskStatus, SubTask, Comment, Attachment, TimeEntry } from '../types/todo';
+import { Todo, Priority, Category, TodoStatus, SubTask, Comment, Attachment, TimeEntry } from '../types/todo';
 
 interface TodoState {
   todos: Todo[];
-  loading: boolean;
-  error: string | null;
-  filters: {
-    search: string;
+  filter: {
+    status: TodoStatus | 'all';
     priority: Priority | 'all';
     category: Category | 'all';
-    status: TaskStatus | 'all';
-    tags: string[];
-    dateRange: {
-      start: string | null;
-      end: string | null;
-    };
-    assignedTo: string;
-    dueDate: string | null;
-    showCompleted: boolean;
+    search: string;
+    showArchived: boolean;
   };
   sort: {
     field: keyof Todo;
     direction: 'asc' | 'desc';
   };
-  view: 'list' | 'kanban' | 'calendar';
+  view: 'list' | 'kanban';
+  loading: boolean;
+  error: string | null;
 }
 
 type TodoAction =
   | { type: 'SET_TODOS'; payload: Todo[] }
   | { type: 'ADD_TODO'; payload: Omit<Todo, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt'> }
-  | { type: 'UPDATE_TODO'; payload: Todo }
+  | { type: 'UPDATE_TODO'; payload: { id: string; updates: Partial<Todo> } }
   | { type: 'DELETE_TODO'; payload: string }
   | { type: 'TOGGLE_TODO'; payload: string }
   | { type: 'TOGGLE_STAR'; payload: string }
   | { type: 'TOGGLE_ARCHIVE'; payload: string }
-  | { type: 'ADD_SUBTASK'; payload: { todoId: string; subtask: Omit<SubTask, 'id' | 'createdAt' | 'updatedAt'> } }
-  | { type: 'UPDATE_SUBTASK'; payload: { todoId: string; subtaskId: string; updates: Partial<SubTask> } }
-  | { type: 'DELETE_SUBTASK'; payload: { todoId: string; subtaskId: string } }
-  | { type: 'ADD_COMMENT'; payload: { todoId: string; comment: Omit<Comment, 'id' | 'createdAt' | 'updatedAt'> } }
-  | { type: 'UPDATE_COMMENT'; payload: { todoId: string; commentId: string; updates: Partial<Comment> } }
-  | { type: 'DELETE_COMMENT'; payload: { todoId: string; commentId: string } }
-  | { type: 'ADD_ATTACHMENT'; payload: { todoId: string; attachment: Omit<Attachment, 'id' | 'createdAt' | 'updatedAt'> } }
-  | { type: 'DELETE_ATTACHMENT'; payload: { todoId: string; attachmentId: string } }
-  | { type: 'ADD_TIME_ENTRY'; payload: { todoId: string; timeEntry: Omit<TimeEntry, 'id' | 'createdAt' | 'updatedAt'> } }
-  | { type: 'UPDATE_TIME_ENTRY'; payload: { todoId: string; timeEntryId: string; updates: Partial<TimeEntry> } }
-  | { type: 'DELETE_TIME_ENTRY'; payload: { todoId: string; timeEntryId: string } }
-  | { type: 'SET_FILTERS'; payload: Partial<TodoState['filters']> }
+  | { type: 'SET_FILTER'; payload: Partial<TodoState['filter']> }
   | { type: 'SET_SORT'; payload: TodoState['sort'] }
   | { type: 'SET_VIEW'; payload: TodoState['view'] }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'REORDER_TODOS'; payload: { oldIndex: number; newIndex: number } };
+  | { type: 'ADD_SUBTASK'; payload: { todoId: string; subtask: Omit<SubTask, 'id' | 'createdAt'> } }
+  | { type: 'UPDATE_SUBTASK'; payload: { todoId: string; subtaskId: string; updates: Partial<SubTask> } }
+  | { type: 'DELETE_SUBTASK'; payload: { todoId: string; subtaskId: string } }
+  | { type: 'ADD_COMMENT'; payload: { todoId: string; comment: Omit<Comment, 'id' | 'createdAt'> } }
+  | { type: 'DELETE_COMMENT'; payload: { todoId: string; commentId: string } }
+  | { type: 'ADD_ATTACHMENT'; payload: { todoId: string; attachment: Omit<Attachment, 'id' | 'createdAt'> } }
+  | { type: 'DELETE_ATTACHMENT'; payload: { todoId: string; attachmentId: string } }
+  | { type: 'ADD_TIME_ENTRY'; payload: { todoId: string; timeEntry: Omit<TimeEntry, 'id' | 'createdAt'> } }
+  | { type: 'DELETE_TIME_ENTRY'; payload: { todoId: string; timeEntryId: string } };
 
 const initialState: TodoState = {
   todos: [],
-  loading: false,
-  error: null,
-  filters: {
-    search: '',
+  filter: {
+    status: 'all',
     priority: 'all',
     category: 'all',
-    status: 'all',
-    tags: [],
-    dateRange: {
-      start: null,
-      end: null,
-    },
-    assignedTo: 'all',
-    dueDate: null,
-    showCompleted: true,
+    search: '',
+    showArchived: false,
   },
   sort: {
     field: 'createdAt',
     direction: 'desc',
   },
   view: 'list',
+  loading: false,
+  error: null,
 };
 
 const TodoContext = createContext<{
@@ -86,7 +69,10 @@ const TodoContext = createContext<{
 const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
   switch (action.type) {
     case 'SET_TODOS':
-      return { ...state, todos: action.payload };
+      return {
+        ...state,
+        todos: action.payload,
+      };
     
     case 'ADD_TODO':
       const newTodo: Todo = {
@@ -96,28 +82,32 @@ const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
         updatedAt: new Date().toISOString(),
         lastActivityAt: new Date().toISOString(),
       };
-      return { ...state, todos: [...state.todos, newTodo] };
-    
+      return {
+        ...state,
+        todos: [...state.todos, newTodo],
+      };
+
     case 'UPDATE_TODO':
       return {
         ...state,
         todos: state.todos.map(todo =>
           todo.id === action.payload.id
             ? {
-                ...action.payload,
+                ...todo,
+                ...action.payload.updates,
                 updatedAt: new Date().toISOString(),
                 lastActivityAt: new Date().toISOString(),
               }
             : todo
         ),
       };
-    
+
     case 'DELETE_TODO':
       return {
         ...state,
         todos: state.todos.filter(todo => todo.id !== action.payload),
       };
-    
+
     case 'TOGGLE_TODO':
       return {
         ...state,
@@ -249,29 +239,6 @@ const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
         ),
       };
     
-    case 'UPDATE_COMMENT':
-      return {
-        ...state,
-        todos: state.todos.map(todo =>
-          todo.id === action.payload.todoId
-            ? {
-                ...todo,
-                comments: todo.comments.map(comment =>
-                  comment.id === action.payload.commentId
-                    ? {
-                        ...comment,
-                        ...action.payload.updates,
-                        updatedAt: new Date().toISOString(),
-                      }
-                    : comment
-                ),
-                updatedAt: new Date().toISOString(),
-                lastActivityAt: new Date().toISOString(),
-              }
-            : todo
-        ),
-      };
-    
     case 'DELETE_COMMENT':
       return {
         ...state,
@@ -352,29 +319,6 @@ const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
         ),
       };
     
-    case 'UPDATE_TIME_ENTRY':
-      return {
-        ...state,
-        todos: state.todos.map(todo =>
-          todo.id === action.payload.todoId
-            ? {
-                ...todo,
-                timeEntries: todo.timeEntries.map(timeEntry =>
-                  timeEntry.id === action.payload.timeEntryId
-                    ? {
-                        ...timeEntry,
-                        ...action.payload.updates,
-                        updatedAt: new Date().toISOString(),
-                      }
-                    : timeEntry
-                ),
-                updatedAt: new Date().toISOString(),
-                lastActivityAt: new Date().toISOString(),
-              }
-            : todo
-        ),
-      };
-    
     case 'DELETE_TIME_ENTRY':
       return {
         ...state,
@@ -391,19 +335,19 @@ const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
             : todo
         ),
       };
-    
-    case 'SET_FILTERS':
+
+    case 'SET_FILTER':
       return {
         ...state,
-        filters: { ...state.filters, ...action.payload },
+        filter: { ...state.filter, ...action.payload },
       };
-    
+
     case 'SET_SORT':
       return {
         ...state,
         sort: action.payload,
       };
-    
+
     case 'SET_VIEW':
       return {
         ...state,
@@ -421,24 +365,13 @@ const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
         ...state,
         error: action.payload,
       };
-    
-    case 'REORDER_TODOS': {
-      const { oldIndex, newIndex } = action.payload;
-      const newTodos = [...state.todos];
-      const [movedTodo] = newTodos.splice(oldIndex, 1);
-      newTodos.splice(newIndex, 0, movedTodo);
-      return {
-        ...state,
-        todos: newTodos,
-      };
-    }
-    
+
     default:
       return state;
   }
 };
 
-export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const TodoProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(todoReducer, initialState);
 
   useEffect(() => {

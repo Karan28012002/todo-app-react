@@ -50,8 +50,8 @@ const Todo: React.FC = () => {
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
         <Box
-          sx={{
-            display: 'flex',
+              sx={{
+                display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             mb: 2,
@@ -59,18 +59,18 @@ const Todo: React.FC = () => {
         >
           <Typography variant="h4" component="h1" gutterBottom>
             Todo App
-          </Typography>
+                      </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <ViewSelector currentView={view} onViewChange={handleViewChange} />
             <Tooltip title={isDarkMode ? 'Light Mode' : 'Dark Mode'}>
               <IconButton onClick={toggleTheme} color="inherit">
                 {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Box>
+                    </IconButton>
+                  </Tooltip>
+              </Box>
+            </Box>
         {renderView()}
-      </Box>
+    </Box>
     </Container>
   );
 };

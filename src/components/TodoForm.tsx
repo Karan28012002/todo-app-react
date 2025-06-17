@@ -26,28 +26,35 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 const TodoForm: React.FC = () => {
   const { dispatch } = useTodo();
-  const [newTodo, setNewTodo] = useState({
+  const [newTodo, setNewTodo] = useState<Omit<Todo, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt'>>({
     text: '',
     completed: false,
-    priority: 'medium' as Priority,
-    category: 'personal' as Category,
-    tags: [] as string[],
-    dueDate: null as string | null,
+    priority: 'medium',
+    category: 'work',
+    tags: [],
+    dueDate: null,
+    isStarred: false,
+    isArchived: false,
+    status: 'todo',
     progress: 0,
     subTasks: [],
     dependencies: [],
     comments: [],
     attachments: [],
     timeEntries: [],
-    estimatedTime: undefined as number | undefined,
-    actualTime: undefined as number | undefined,
-    recurrence: undefined as { type: RecurrenceType; interval: number; endDate: string | null; } | undefined,
-    customFields: {},
-    assignedTo: '',
-    status: 'todo' as const,
+    estimatedTime: null,
+    actualTime: null,
+    recurrence: {
+      type: 'none',
+      interval: 1,
+      endDate: null,
+    },
+    customFields: [],
+    assignedTo: null,
     notificationSettings: {
       email: false,
       push: false,
+      reminder: false,
       reminderTime: null,
     },
   });
@@ -59,35 +66,38 @@ const TodoForm: React.FC = () => {
 
     dispatch({
       type: 'ADD_TODO',
-      payload: {
-        ...newTodo,
-        isStarred: false,
-        isArchived: false,
-      } as Omit<Todo, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt'>,
+      payload: newTodo,
     });
 
     setNewTodo({
       text: '',
       completed: false,
       priority: 'medium',
-      category: 'personal',
+      category: 'work',
       tags: [],
       dueDate: null,
+      isStarred: false,
+      isArchived: false,
+      status: 'todo',
       progress: 0,
       subTasks: [],
       dependencies: [],
       comments: [],
       attachments: [],
       timeEntries: [],
-      estimatedTime: undefined,
-      actualTime: undefined,
-      recurrence: undefined,
-      customFields: {},
-      assignedTo: '',
-      status: 'todo',
+      estimatedTime: null,
+      actualTime: null,
+      recurrence: {
+        type: 'none',
+        interval: 1,
+        endDate: null,
+      },
+      customFields: [],
+      assignedTo: null,
       notificationSettings: {
         email: false,
         push: false,
+        reminder: false,
         reminderTime: null,
       },
     });
