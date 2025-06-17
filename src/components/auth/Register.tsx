@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Auth.css'; // Custom CSS for authentication components
 
+// Define the base URL for the backend API
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,21 +28,8 @@ const Register: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
-
-      await authRegister(name, email, password); // Correctly pass credentials to context's register function
+      // The AuthContext's register function now handles the fetch call directly
+      await authRegister(name, email, password);
       navigate('/todos');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
