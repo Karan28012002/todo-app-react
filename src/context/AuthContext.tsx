@@ -1,11 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Only import axios, not isAxiosError as a named export
 import { AuthContextType, User } from '../types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Define the base URL for the backend API
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
+// Interface for the expected successful authentication response
+interface AuthResponse {
+  token: string;
+  user: User;
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,15 +34,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
           setIsAuthenticated(true);
+          // Set default Authorization header for all future axios requests
+          axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         } else {
           // Invalid token format, clear storage
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          delete axios.defaults.headers.common['Authorization'];
         }
       } catch (error) {
         console.error('Error parsing stored user data:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        delete axios.defaults.headers.common['Authorization'];
       }
     }
     setLoading(false);
@@ -43,23 +54,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await axios.post<AuthResponse>(`${API_BASE_URL}/api/users/login`, { email, password });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
+      const newToken = response.data.token;
+      const userData = response.data.user;
 
       // Validate token format before storing
-      const newToken = data.token;
-      const userData = data.user;
       const tokenParts = newToken.split('.');
       if (tokenParts.length !== 3) {
         throw new Error('Invalid token format');
@@ -70,31 +70,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(newToken);
       setUser(userData);
       setIsAuthenticated(true);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     } catch (error) {
       console.error('Error during login:', error);
-      throw error;
     }
   };
 
   const register = async (name: string, email: string, password: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
+      const response = await axios.post<AuthResponse>(`${API_BASE_URL}/api/users/register`, { name, email, password });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
+      const newToken = response.data.token;
+      const userData = response.data.user;
 
       // Validate token format before storing
-      const newToken = data.token;
-      const userData = data.user;
       const tokenParts = newToken.split('.');
       if (tokenParts.length !== 3) {
         throw new Error('Invalid token format');
@@ -105,9 +94,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(newToken);
       setUser(userData);
       setIsAuthenticated(true);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     } catch (error) {
       console.error('Error during registration:', error);
-      throw error;
+    
     }
   };
 
@@ -117,6 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
+    delete axios.defaults.headers.common['Authorization'];
     navigate('/login');
   };
 

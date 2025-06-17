@@ -1,151 +1,117 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import './TodoList.css'; // Import the custom CSS file
+import { Priority } from '../types/todo';
 
 // Define the base URL for the backend API
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
 interface Todo {
   _id: string;
-  text: string;
+  title: string;
+  description: string;
   status: 'pending' | 'completed';
-  priority: 'low' | 'medium' | 'high';
-  category: string;
-  tags: string[];
-  dueDate: string;
-  starred: boolean;
+  priority: Priority;
+  dueDate?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface NewTodo {
+  title: string;
+  description: string;
+  priority: Priority;
 }
 
 const TodoList: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newTodo, setNewTodo] = useState({
-    text: '',
-    priority: 'medium' as 'low' | 'medium' | 'high',
-    category: '',
-    tags: [] as string[],
-    dueDate: ''
+  const [newTodo, setNewTodo] = useState<NewTodo>({ 
+    title: '', 
+    description: '', 
+    priority: 'medium' 
   });
-  const [tagInput, setTagInput] = useState('');
   const { token } = useAuth();
 
   useEffect(() => {
     fetchTodos();
-  }, []);
+  }, [token]);
 
   const fetchTodos = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/todos`, {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get<Todo[]>(`${API_BASE_URL}/api/todos`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
+      setTodos(response.data);
+    } catch (error) {
+      console.error('Error fetching todos:', error);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch todos');
-      }
-
-      const data = await response.json();
-      setTodos(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch todos');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateTodo = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTodo.text.trim()) return;
+    if (!newTodo.title.trim()) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/todos`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newTodo)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create todo');
-      }
-
-      const data = await response.json();
-      setTodos([...todos, data]);
-      setNewTodo({
-        text: '',
-        priority: 'medium',
-        category: '',
-        tags: [],
-        dueDate: ''
-      });
-      setTagInput('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create todo');
+      setError(null);
+      const response = await axios.post<Todo>(
+        `${API_BASE_URL}/api/todos`,
+        newTodo,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      setTodos([...todos, response.data]);
+      setNewTodo({ title: '', description: '', priority: 'medium' });
+    } catch (error) {
+      console.error('Error creating todo:', error);
+     
     }
   };
 
-  const handleUpdateTodo = async (id: string, updates: Partial<Todo>) => {
+  const handleStatusChange = async (id: string, newStatus: 'pending' | 'completed') => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update todo');
-      }
-
-      const updatedTodo = await response.json();
-      setTodos(todos.map(todo => todo._id === id ? updatedTodo : todo));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update todo');
+      setError(null);
+      const response = await axios.patch<Todo>(
+        `${API_BASE_URL}/api/todos/${id}`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      setTodos(todos.map(todo => todo._id === id ? response.data : todo));
+    } catch (error) {
+      console.error('Error updating todo status:', error);
+      
     }
   };
 
-  const handleDeleteTodo = async (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
-        method: 'DELETE',
+      setError(null);
+      await axios.delete(`${API_BASE_URL}/api/todos/${id}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete todo');
-      }
-
       setTodos(todos.filter(todo => todo._id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete todo');
+    } catch (error) {
+      console.error('Error deleting todo:', error);
+      
     }
-  };
-
-  const handleAddTag = () => {
-    if (tagInput.trim() && !newTodo.tags.includes(tagInput.trim())) {
-      setNewTodo({
-        ...newTodo,
-        tags: [...newTodo.tags, tagInput.trim()]
-      });
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setNewTodo({
-      ...newTodo,
-      tags: newTodo.tags.filter(tag => tag !== tagToRemove)
-    });
   };
 
   if (loading) {
@@ -157,177 +123,63 @@ const TodoList: React.FC = () => {
   }
 
   return (
-    <div className="todo-list-container">
-      {error && (
-        <div className="error-alert">
-          {error}
-          <button className="close-button" onClick={() => setError(null)}>&times;</button>
-        </div>
-      )}
+    <div className="todo-container">
+      <h2>Todo List</h2>
+      {error && <div className="todo-error">{error}</div>}
+      
+      <form onSubmit={handleSubmit} className="todo-form">
+        <input
+          type="text"
+          value={newTodo.title}
+          onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
+          placeholder="New todo title"
+          className="todo-input"
+        />
+        <textarea
+          value={newTodo.description}
+          onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
+          placeholder="Description (optional)"
+          className="todo-textarea"
+        />
+        <select
+          value={newTodo.priority}
+          onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value as Priority })}
+          className="todo-select"
+        >
+          <option value="low">Low Priority</option>
+          <option value="medium">Medium Priority</option>
+          <option value="high">High Priority</option>
+        </select>
+        <button type="submit" className="todo-button">Add Todo</button>
+      </form>
 
-      <div className="todo-card">
-        <div className="card-header">
-          <h3>Add New Todo</h3>
-        </div>
-        <div className="card-body">
-          <form onSubmit={handleCreateTodo}>
-            <div className="form-group">
-              <label htmlFor="text">Todo Text</label>
-              <input
-                type="text"
-                className="form-control"
-                id="text"
-                value={newTodo.text}
-                onChange={(e) => setNewTodo({ ...newTodo, text: e.target.value })}
-                placeholder="What needs to be done?"
-                required
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group half-width">
-                <label htmlFor="priority">Priority</label>
-                <select
-                  className="form-control"
-                  id="priority"
-                  value={newTodo.priority}
-                  onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value as 'low' | 'medium' | 'high' })}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-              <div className="form-group half-width">
-                <label htmlFor="category">Category</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="category"
-                  value={newTodo.category}
-                  onChange={(e) => setNewTodo({ ...newTodo, category: e.target.value })}
-                  placeholder="e.g., Work, Personal"
-                />
+      <div className="todo-list">
+        {todos.map(todo => (
+          <div key={todo._id} className={`todo-item ${todo.status}`}>
+            <div className="todo-content">
+              <h3>{todo.title}</h3>
+              <p>{todo.description}</p>
+              <div className="todo-meta">
+                <span className={`priority ${todo.priority}`}>{todo.priority}</span>
+                {todo.dueDate && <span className="due-date">Due: {new Date(todo.dueDate).toLocaleDateString()}</span>}
               </div>
             </div>
-
-            <div className="form-group">
-              <label htmlFor="dueDate">Due Date</label>
-              <input
-                type="date"
-                className="form-control"
-                id="dueDate"
-                value={newTodo.dueDate}
-                onChange={(e) => setNewTodo({ ...newTodo, dueDate: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="tags">Tags</label>
-              <div className="input-group">
-                <input
-                  type="text"
-                  className="form-control"
-                  id="tags"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="Add a tag"
-                />
-                <button
-                  type="button"
-                  className="add-tag-button"
-                  onClick={handleAddTag}
-                >
-                  Add
-                </button>
-              </div>
-              {newTodo.tags.length > 0 && (
-                <div className="tag-list">
-                  {newTodo.tags.map((tag) => (
-                    <span key={tag} className="tag-item">
-                      {tag}
-                      <button
-                        type="button"
-                        className="remove-tag-button"
-                        onClick={() => handleRemoveTag(tag)}
-                        aria-label="Remove tag"
-                      >
-                        &times;
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" className="submit-button">
-                Add Todo
+            <div className="todo-actions">
+              <button
+                onClick={() => handleStatusChange(todo._id, todo.status === 'completed' ? 'pending' : 'completed')}
+                className={`status-button ${todo.status}`}
+              >
+                {todo.status === 'completed' ? 'Mark Pending' : 'Mark Complete'}
+              </button>
+              <button
+                onClick={() => handleDelete(todo._id)}
+                className="delete-button"
+              >
+                Delete
               </button>
             </div>
-          </form>
-        </div>
-      </div>
-
-      <div className="todo-list-card">
-        <div className="card-header">
-          <h3>Todo List</h3>
-        </div>
-        <ul className="todo-items-list">
-          {todos.map((todo) => (
-            <li key={todo._id} className="todo-item">
-              <div className="todo-content">
-                <div className="todo-checkbox">
-                  <input
-                    type="checkbox"
-                    className="checkbox-input"
-                    checked={todo.status === 'completed'}
-                    onChange={() => handleUpdateTodo(todo._id, {
-                      status: todo.status === 'completed' ? 'pending' : 'completed'
-                    })}
-                  />
-                </div>
-                <div className="todo-details">
-                  <h6 className={`todo-text ${todo.status === 'completed' ? 'completed' : ''}`}>
-                    {todo.text}
-                  </h6>
-                  <div className="todo-meta">
-                    {todo.category && (
-                      <span className="todo-category">{todo.category}</span>
-                    )}
-                    {todo.tags.map((tag) => (
-                      <span key={tag} className="todo-tag">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="todo-actions">
-                <span className={`todo-priority ${todo.priority}`}>
-                  {todo.priority}
-                </span>
-                {todo.dueDate && (
-                  <span className="todo-due-date">
-                    Due: {new Date(todo.dueDate).toLocaleDateString()}
-                  </span>
-                )}
-                <button
-                  onClick={() => handleUpdateTodo(todo._id, { starred: !todo.starred })}
-                  className={`action-button star-button ${todo.starred ? 'starred' : ''}`}
-                >
-                  <i className={`bi bi-star${todo.starred ? '-fill' : ''}`}></i>
-                </button>
-                <button
-                  onClick={() => handleDeleteTodo(todo._id)}
-                  className="action-button delete-button"
-                >
-                  <i className="bi bi-trash"></i>
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+          </div>
+        ))}
       </div>
     </div>
   );

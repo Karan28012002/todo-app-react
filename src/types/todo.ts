@@ -113,4 +113,10 @@ export interface TodoFilters {
 export interface TodoSort {
   field: SortOption;
   direction: 'asc' | 'desc';
+}
+
+export interface NewTodo {
+  title: string;
+  description: string;
+  priority: Priority;
 } 
