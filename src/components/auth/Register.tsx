@@ -39,7 +39,7 @@ const Register: React.FC = () => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      authRegister(data.token, data.user); // Use authRegister from context
+      await authRegister(name, email, password); // Correctly pass credentials to context's register function
       navigate('/todos');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');

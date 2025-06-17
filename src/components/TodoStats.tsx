@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './TodoStats.css';
 
+// Define the base URL for the backend API
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 interface TodoStatsData {
   totalTodos: number;
   completedTodos: number;
@@ -24,7 +27,7 @@ const TodoStats: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/todos/stats', {
+        const response = await fetch(`${API_BASE_URL}/api/todos/stats`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

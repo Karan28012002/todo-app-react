@@ -19,9 +19,9 @@ export interface AuthContextType {
   token: string | null;
   user: User | null;
   loading: boolean;
-  login: (token: string, user: User) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (token: string, user: User) => void;
+  register: (name: string, email: string, password: string) => Promise<void>;
 }
 
 export interface LoginCredentials {

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './TodoList.css'; // Import the custom CSS file
 
+// Define the base URL for the backend API
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 interface Todo {
   _id: string;
   text: string;
@@ -35,7 +38,7 @@ const TodoList: React.FC = () => {
 
   const fetchTodos = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/todos', {
+      const response = await fetch(`${API_BASE_URL}/api/todos`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -59,7 +62,7 @@ const TodoList: React.FC = () => {
     if (!newTodo.text.trim()) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/todos', {
+      const response = await fetch(`${API_BASE_URL}/api/todos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +92,7 @@ const TodoList: React.FC = () => {
 
   const handleUpdateTodo = async (id: string, updates: Partial<Todo>) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/todos/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +114,7 @@ const TodoList: React.FC = () => {
 
   const handleDeleteTodo = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/todos/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/todos/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

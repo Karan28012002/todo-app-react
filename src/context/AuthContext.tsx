@@ -4,6 +4,9 @@ import { AuthContextType, User } from '../types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Define the base URL for the backend API
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -38,9 +41,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const login = (newToken: string, userData: User) => {
+  const login = async (email: string, password: string) => {
     try {
+      const response = await fetch(`${API_BASE_URL}/api/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
       // Validate token format before storing
+      const newToken = data.token;
+      const userData = data.user;
       const tokenParts = newToken.split('.');
       if (tokenParts.length !== 3) {
         throw new Error('Invalid token format');
@@ -51,16 +70,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(newToken);
       setUser(userData);
       setIsAuthenticated(true);
-      navigate('/todos');
     } catch (error) {
       console.error('Error during login:', error);
       throw error;
     }
   };
 
-  const register = (newToken: string, userData: User) => {
+  const register = async (name: string, email: string, password: string) => {
     try {
+      const response = await fetch(`${API_BASE_URL}/api/users/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
       // Validate token format before storing
+      const newToken = data.token;
+      const userData = data.user;
       const tokenParts = newToken.split('.');
       if (tokenParts.length !== 3) {
         throw new Error('Invalid token format');
@@ -71,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(newToken);
       setUser(userData);
       setIsAuthenticated(true);
-      navigate('/todos');
     } catch (error) {
       console.error('Error during registration:', error);
       throw error;
