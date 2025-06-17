@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Only import axios, not isAxiosError as a named export
+import axios from 'axios';
 import { AuthContextType, User } from '../types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -73,6 +73,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     } catch (error) {
       console.error('Error during login:', error);
+      if (error instanceof Error) {
+        if ('response' in error) {
+          throw new Error((error as any).response.data.message || 'Login failed');
+        } else {
+          throw new Error('Login failed: An unknown error occurred');
+        }
+      }
     }
   };
 
@@ -97,7 +104,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     } catch (error) {
       console.error('Error during registration:', error);
-    
+      if (error instanceof Error) {
+        if ('response' in error) {
+          throw new Error((error as any).response.data.message || 'Registration failed');
+        } else {
+          throw new Error('Registration failed: An unknown error occurred');
+        }
+      }
     }
   };
 
