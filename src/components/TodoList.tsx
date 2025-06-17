@@ -1,38 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import './TodoList.css'; // Import the custom CSS file
-import { Priority } from '../types/todo';
-
-// Define the base URL for the backend API
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+import './TodoList.css';
 
 interface Todo {
   _id: string;
   title: string;
   description: string;
   status: 'pending' | 'completed';
-  priority: Priority;
+  priority: 'low' | 'medium' | 'high';
   dueDate?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-interface NewTodo {
-  title: string;
-  description: string;
-  priority: Priority;
-}
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
 const TodoList: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [newTodo, setNewTodo] = useState<{
+    title: string;
+    description: string;
+    priority: 'low' | 'medium' | 'high';
+  }>({ title: '', description: '', priority: 'medium' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newTodo, setNewTodo] = useState<NewTodo>({ 
-    title: '', 
-    description: '', 
-    priority: 'medium' 
-  });
   const { token } = useAuth();
 
   useEffect(() => {
@@ -51,7 +43,11 @@ const TodoList: React.FC = () => {
       setTodos(response.data);
     } catch (error) {
       console.error('Error fetching todos:', error);
-
+      if (error instanceof Error) {
+        setError(error.message || 'Failed to fetch todos');
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -76,7 +72,11 @@ const TodoList: React.FC = () => {
       setNewTodo({ title: '', description: '', priority: 'medium' });
     } catch (error) {
       console.error('Error creating todo:', error);
-     
+      if (error instanceof Error) {
+        setError(error.message || 'Failed to create todo');
+      } else {
+        setError('An unexpected error occurred');
+      }
     }
   };
 
@@ -95,7 +95,11 @@ const TodoList: React.FC = () => {
       setTodos(todos.map(todo => todo._id === id ? response.data : todo));
     } catch (error) {
       console.error('Error updating todo status:', error);
-      
+      if (error instanceof Error) {
+        setError(error.message || 'Failed to update todo status');
+      } else {
+        setError('An unexpected error occurred');
+      }
     }
   };
 
@@ -110,16 +114,16 @@ const TodoList: React.FC = () => {
       setTodos(todos.filter(todo => todo._id !== id));
     } catch (error) {
       console.error('Error deleting todo:', error);
-      
+      if (error instanceof Error) {
+        setError(error.message || 'Failed to delete todo');
+      } else {
+        setError('An unexpected error occurred');
+      }
     }
   };
 
   if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-      </div>
-    );
+    return <div className="todo-loading">Loading todos...</div>;
   }
 
   return (
@@ -143,7 +147,7 @@ const TodoList: React.FC = () => {
         />
         <select
           value={newTodo.priority}
-          onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value as Priority })}
+          onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value as 'low' | 'medium' | 'high' })}
           className="todo-select"
         >
           <option value="low">Low Priority</option>
