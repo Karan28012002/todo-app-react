@@ -56,6 +56,8 @@ const TodoDetails: React.FC<TodoDetailsProps> = ({ todo, open, onClose }) => {
           subtask: {
             text: newSubtask,
             completed: false,
+            updatedAt: new Date().toISOString(),
+            completedAt: null,
           },
         },
       });
@@ -84,7 +86,8 @@ const TodoDetails: React.FC<TodoDetailsProps> = ({ todo, open, onClose }) => {
           todoId: todo.id,
           comment: {
             text: newComment,
-            author: 'Current User', // Replace with actual user
+            author: 'Current User',
+            updatedAt: new Date().toISOString(),
           },
         },
       });
@@ -99,8 +102,9 @@ const TodoDetails: React.FC<TodoDetailsProps> = ({ todo, open, onClose }) => {
         payload: {
           todoId: todo.id,
           timeEntry: {
-            duration: timeEntry.hours * 60 + timeEntry.minutes,
             description: 'Time entry',
+            duration: timeEntry.hours * 60 + timeEntry.minutes,
+            updatedAt: new Date().toISOString(),
           },
         },
       });

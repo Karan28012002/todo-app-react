@@ -29,6 +29,16 @@ const Navbar: React.FC = () => {
                 </Link>
               </li>
               <li className="nav-item">
+                <Link to="/kanban" className="nav-link">
+                  Kanban
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/calendar" className="nav-link">
+                  Calendar
+                </Link>
+              </li>
+              <li className="nav-item">
                 <Link to="/stats" className="nav-link">
                   Statistics
                 </Link>

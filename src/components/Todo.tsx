@@ -28,7 +28,7 @@ const Todo: React.FC = () => {
   const handleViewChange = (newView: ViewType) => {
     setView(newView);
   };
-
+ 
   const renderView = () => {
     switch (view) {
       case 'kanban':

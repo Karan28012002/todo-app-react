@@ -6,6 +6,8 @@ import Register from './components/auth/Register';
 import TodoList from './components/TodoList';
 import TodoStats from './components/TodoStats';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import KanbanView from './components/KanbanView';
+import CalendarView from './components/CalendarView';
 
 const App: React.FC = () => {
   return (
@@ -20,6 +22,22 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <TodoList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/kanban"
+            element={
+              <ProtectedRoute>
+                <KanbanView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute>
+                <CalendarView />
               </ProtectedRoute>
             }
           />

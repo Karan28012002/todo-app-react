@@ -1,14 +1,15 @@
 export type Priority = 'low' | 'medium' | 'high';
 export type Category = 'work' | 'personal' | 'shopping' | 'health' | 'other';
-export type SortOption = 'createdAt' | 'text' | 'priority' | 'category' | 'dueDate';
 export type TodoStatus = 'todo' | 'in-progress' | 'done';
-export type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'none';
+export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface SubTask {
   id: string;
   text: string;
   completed: boolean;
+  completedAt: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Comment {
@@ -16,6 +17,7 @@ export interface Comment {
   text: string;
   author: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Attachment {
@@ -29,9 +31,10 @@ export interface Attachment {
 
 export interface TimeEntry {
   id: string;
-  duration: number; // in minutes
   description: string;
+  duration: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CustomField {
@@ -51,6 +54,7 @@ export interface NotificationSettings {
 export interface Todo {
   id: string;
   text: string;
+  description?: string;
   completed: boolean;
   priority: Priority;
   category: Category;
@@ -64,12 +68,12 @@ export interface Todo {
   status: TodoStatus;
   progress: number;
   subTasks: SubTask[];
-  dependencies: string[]; // IDs of dependent todos
+  dependencies: string[];
   comments: Comment[];
   attachments: Attachment[];
   timeEntries: TimeEntry[];
-  estimatedTime: number | null; // in minutes
-  actualTime: number | null; // in minutes
+  estimatedTime: number | null;
+  actualTime: number | null;
   recurrence: {
     type: RecurrenceType;
     interval: number;
@@ -82,16 +86,19 @@ export interface Todo {
 
 export interface TodoState {
   todos: Todo[];
-  filters: {
+  filter: {
+    status: TodoStatus | 'all';
+    priority: Priority | 'all';
+    category: Category | 'all';
     search: string;
-    category: Category | null;
-    priority: Priority | null;
-    showCompleted: boolean;
+    showArchived: boolean;
+    showStarred: boolean;
+    dueDate: string | null;
   };
-  sort: {
-    field: SortOption;
-    direction: 'asc' | 'desc';
-  };
+  sort: SortOption;
+  view: 'list' | 'kanban';
+  loading: boolean;
+  error: string | null;
 }
 
 export type TodoAction =
@@ -99,7 +106,7 @@ export type TodoAction =
   | { type: 'TOGGLE_TODO'; payload: string }
   | { type: 'DELETE_TODO'; payload: string }
   | { type: 'UPDATE_TODO'; payload: Todo }
-  | { type: 'SET_FILTERS'; payload: Partial<TodoState['filters']> }
+  | { type: 'SET_FILTERS'; payload: Partial<TodoState['filter']> }
   | { type: 'SET_SORT'; payload: TodoState['sort'] };
 
 export interface TodoFilters {
@@ -108,10 +115,13 @@ export interface TodoFilters {
   category: Category | '';
   priority: Priority | '';
   dueDate: string | '';
+  showArchived: boolean;
+  showStarred: boolean;
 }
 
-export interface TodoSort {
-  field: SortOption;
+export interface SortOption {
+  field: keyof Todo;
+  label: string;
   direction: 'asc' | 'desc';
 }
 

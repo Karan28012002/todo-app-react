@@ -10,6 +10,8 @@ interface TodoState {
     category: Category | 'all';
     search: string;
     showArchived: boolean;
+    showStarred: boolean;
+    dueDate: string | null;
   };
   sort: {
     field: keyof Todo;
@@ -51,12 +53,14 @@ const initialState: TodoState = {
     category: 'all',
     search: '',
     showArchived: false,
+    showStarred: false,
+    dueDate: null,
   },
   sort: {
     field: 'createdAt',
     direction: 'desc',
   },
-  view: 'list',
+  view: 'kanban',
   loading: false,
   error: null,
 };
@@ -167,6 +171,7 @@ const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
                     id: uuidv4(),
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
+                    completedAt: null,
                   },
                 ],
                 updatedAt: new Date().toISOString(),
@@ -227,6 +232,7 @@ const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
                   ...todo.comments,
                   {
                     ...action.payload.comment,
+                    author: action.payload.comment.author || 'Current User',
                     id: uuidv4(),
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
@@ -307,6 +313,7 @@ const todoReducer = (state: TodoState, action: TodoAction): TodoState => {
                   ...todo.timeEntries,
                   {
                     ...action.payload.timeEntry,
+                    duration: action.payload.timeEntry.duration ?? 0,
                     id: uuidv4(),
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
